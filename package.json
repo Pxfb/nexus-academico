@@ -1,0 +1,24 @@
+{
+  "name": "nexus-academico",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\"",
+    "lint": "eslint frontend backend",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "build": "npm run build --workspace frontend && npm run build --workspace backend"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "3.9.9",
+    "typescript-eslint": "^8.71.0"
+  }
+}
