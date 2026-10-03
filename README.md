@@ -40,7 +40,7 @@ Plataforma web acadêmica desenvolvida pelo projeto MFDS.
 Clone o repositório:
 
 ```bash
-git clone URL_DO_REPOSITORIO
+git clone https://github.com/Pxfb/nexus-academico.git
 ```
 
 Entre na pasta:
