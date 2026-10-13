@@ -2,20 +2,40 @@ import 'dotenv/config';
 
 import cors from 'cors';
 import express, { type Express } from 'express';
+import helmet from 'helmet';
 
 import { pool } from './db.js';
+import { sessionMiddleware } from './session.js';
+import authRouter from './routes/auth.js';
 
 const app: Express = express();
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+app.disable('x-powered-by');
+
 app.use(
-  cors({
-    origin: frontendUrl,
+  helmet({
+    contentSecurityPolicy: isProduction,
   }),
 );
 
-app.use(express.json());
+app.use(
+  cors({
+    origin: frontendUrl,
+    credentials: true,
+  }),
+);
+
+app.use(
+  express.json({
+    limit: '100kb',
+  }),
+);
+
+app.use(sessionMiddleware);
 
 app.get('/api/health', async (_request, response) => {
   try {
@@ -37,5 +57,7 @@ app.get('/api/health', async (_request, response) => {
     });
   }
 });
+
+app.use('/api/auth', authRouter);
 
 export { app };

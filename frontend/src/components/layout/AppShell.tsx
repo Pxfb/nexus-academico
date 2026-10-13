@@ -1,11 +1,31 @@
-import { GraduationCap, Bell } from 'lucide-react';
+import { Bell, GraduationCap, LogOut } from 'lucide-react';
 
-import { Link, NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 
 import { navigation } from '../../data/navigation';
 
+import { useAuth } from '../../auth/AuthContext';
+
 export default function AppShell() {
+  const { user, logout } = useAuth();
+
+  const navigate = useNavigate();
+
   const mobileNavigation = navigation.slice(0, 5);
+
+  async function handleLogout() {
+    try {
+      await logout();
+
+      navigate('/login', {
+        replace: true,
+      });
+    } catch {
+      navigate('/login', {
+        replace: true,
+      });
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -51,13 +71,25 @@ export default function AppShell() {
 
         <div className="sidebar-footer">
           <div className="user-summary">
-            <div className="avatar">E</div>
-
-            <div>
-              <div className="user-name">Estudante</div>
-
-              <div className="user-role">Perfil acadêmico</div>
+            <div className="avatar">
+              {user?.fullName.charAt(0).toUpperCase() ?? 'U'}
             </div>
+
+            <div className="user-summary-content">
+              <div className="user-name">{user?.fullName ?? 'Usuário'}</div>
+
+              <div className="user-role">{user?.email ?? ''}</div>
+            </div>
+
+            <button
+              type="button"
+              className="icon-button logout-button"
+              onClick={handleLogout}
+              aria-label="Sair"
+              title="Sair"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>
@@ -71,14 +103,14 @@ export default function AppShell() {
           </div>
 
           <div className="topbar-actions">
-            <Link
+            <NavLink
               to="/notificacoes"
               className="icon-button"
               aria-label="Abrir notificações"
               title="Notificações"
             >
               <Bell size={18} />
-            </Link>
+            </NavLink>
           </div>
         </header>
 
