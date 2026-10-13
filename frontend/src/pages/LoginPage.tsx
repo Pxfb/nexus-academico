@@ -1,12 +1,71 @@
-import type { FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 
-import { GraduationCap } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap } from 'lucide-react';
 
-import { Link } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
+
+import { useAuth } from '../auth/AuthContext';
+
+import { ApiError } from '../lib/api';
 
 export default function LoginPage() {
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const { login } = useAuth();
+
+  const navigate = useNavigate();
+
+  const location = useLocation();
+
+  const [email, setEmail] = useState('');
+
+  const [password, setPassword] = useState('');
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [error, setError] = useState('');
+
+  const [loading, setLoading] = useState(false);
+
+  const from =
+    (
+      location.state as {
+        from?: string;
+      } | null
+    )?.from ?? '/';
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    setError('');
+
+    if (!email.trim()) {
+      setError('Informe seu e-mail.');
+
+      return;
+    }
+
+    if (!password) {
+      setError('Informe sua senha.');
+
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await login(email, password);
+
+      navigate(from, {
+        replace: true,
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setError(error.message);
+      } else {
+        setError('Não foi possível entrar. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -32,6 +91,12 @@ export default function LoginPage() {
             Acesse seu ambiente acadêmico.
           </p>
 
+          {error && (
+            <div className="form-error" role="alert">
+              {error}
+            </div>
+          )}
+
           <form className="form" onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="email">E-mail</label>
@@ -40,25 +105,46 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="seu@email.com"
                 autoComplete="email"
+                disabled={loading}
               />
             </div>
 
             <div className="field">
               <label htmlFor="password">Senha</label>
 
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Digite sua senha"
-                autoComplete="current-password"
-              />
+              <div className="password-field">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Digite sua senha"
+                  autoComplete="current-password"
+                  disabled={loading}
+                />
+
+                <button
+                  type="button"
+                  className="password-toggle"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  onClick={() => setShowPassword((current) => !current)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
-            <button type="submit" className="button button-primary">
-              Entrar
+            <button
+              type="submit"
+              className="button button-primary"
+              disabled={loading}
+            >
+              {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
 

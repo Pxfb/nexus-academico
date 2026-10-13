@@ -1,5 +1,5 @@
 import { CalendarDays, CheckCircle2, Clock3, Trophy } from 'lucide-react';
-
+import { useAuth } from '../auth/AuthContext';
 import { Link } from 'react-router';
 
 import { ApiStatus } from '../components/ui/ApiStatus';
@@ -26,13 +26,16 @@ const tasks = [
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   return (
     <div className="page">
       <header className="page-header">
         <div>
           <p className="eyebrow">Visão geral</p>
 
-          <h1 className="page-title">Olá, estudante 👋</h1>
+          <h1 className="page-title">
+            Olá, {user?.fullName ?? 'estudante'} 👋
+          </h1>
 
           <p className="page-description">
             Acompanhe suas atividades acadêmicas, compromissos e progresso em um
