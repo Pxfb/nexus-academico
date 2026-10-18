@@ -9,7 +9,6 @@ import {
   MessageCircle,
   NotebookPen,
   Settings,
-  Trophy,
   Users,
   Video,
   Bell,
@@ -23,6 +22,7 @@ import DashboardPage from '../pages/DashboardPage';
 import LoginPage from '../pages/LoginPage';
 import PlaceholderPage from '../pages/PlaceholderPage';
 import RegisterPage from '../pages/RegisterPage';
+import AchievementsPage from '../pages/AchievementsPage';
 
 export function AppRouter() {
   return (
@@ -135,16 +135,7 @@ export function AppRouter() {
               }
             />
 
-            <Route
-              path="conquistas"
-              element={
-                <PlaceholderPage
-                  title="Conquistas"
-                  description="Área preparada para gamificação, pontos e conquistas."
-                  icon={Trophy}
-                />
-              }
-            />
+            <Route path="conquistas" element={<AchievementsPage />} />
 
             <Route
               path="notificacoes"

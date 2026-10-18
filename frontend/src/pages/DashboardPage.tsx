@@ -6,6 +6,8 @@ import { ApiStatus } from '../components/ui/ApiStatus';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { StatCard } from '../components/ui/StatCard';
+import { useEffect, useState } from 'react';
+import { getGamification, type GamificationSummary } from '../lib/api';
 
 const tasks = [
   {
@@ -27,6 +29,28 @@ const tasks = [
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [gamification, setGamification] = useState<GamificationSummary | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    getGamification()
+      .then((result) => {
+        if (active) {
+          setGamification(result);
+        }
+      })
+      .catch((error) => {
+        // O Dashboard continua funcionando mesmo sem a gamificação.
+        console.error('Não foi possível carregar a gamificação:', error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
   return (
     <div className="page">
       <header className="page-header">
@@ -59,7 +83,15 @@ export default function DashboardPage() {
           icon={CalendarDays}
         />
 
-        <StatCard label="Pontos" value="1.250" icon={Trophy} />
+        <StatCard
+          label="Pontos"
+          value={
+            gamification
+              ? gamification.totalPoints.toLocaleString('pt-BR')
+              : '—'
+          }
+          icon={Trophy}
+        />
       </div>
 
       <div className="dashboard-grid">
@@ -167,6 +199,63 @@ export default function DashboardPage() {
 
             <div className="card-body">
               <ApiStatus />
+            </div>
+          </Card>
+          <Card>
+            <div className="card-header">
+              <div>
+                <h2 className="card-title">Seu nível</h2>
+
+                <p className="card-subtitle">Evolução na gamificação</p>
+              </div>
+
+              <Link to="/conquistas" className="text-link">
+                Ver conquistas
+              </Link>
+            </div>
+
+            <div className="card-body">
+              {gamification ? (
+                <>
+                  <div className="progress-info">
+                    <span className="progress-label">
+                      Nível {gamification.level}
+                    </span>
+
+                    <span className="progress-number">
+                      {gamification.pointsInCurrentLevel} /{' '}
+                      {gamification.pointsPerLevel}
+                    </span>
+                  </div>
+
+                  <div
+                    className="progress"
+                    role="progressbar"
+                    aria-label="Progresso para o próximo nível"
+                    aria-valuemin={0}
+                    aria-valuemax={gamification.pointsPerLevel}
+                    aria-valuenow={gamification.pointsInCurrentLevel}
+                  >
+                    <div
+                      className="progress-value"
+                      style={{
+                        width: `${Math.round(
+                          (gamification.pointsInCurrentLevel /
+                            gamification.pointsPerLevel) *
+                            100,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+
+                  <p className="card-subtitle">
+                    Faltam {gamification.pointsToNextLevel} pontos para o
+                    próximo nível.
+                  </p>
+                </>
+              ) : (
+                <p className="card-subtitle">Carregando...</p>
+              )}
             </div>
           </Card>
         </div>

@@ -1,30 +1,26 @@
 import 'dotenv/config';
 
-import { readFile } from 'node:fs/promises';
-
+import { readdir, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-
 import { fileURLToPath } from 'node:url';
 
 import { pool } from '../db.js';
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 
-const migrationFile = resolve(
-  currentDirectory,
-  '../../sql/001_create_users.sql',
-);
+const sqlDirectory = resolve(currentDirectory, '../../sql');
 
-const migrationName = '001_create_users.sql';
+// Número arbitrário, igual para todos, usado como trava no banco.
+const MIGRATION_LOCK_ID = 727274;
 
 async function migrate() {
-  const sql = await readFile(migrationFile, 'utf8');
+  const files = (await readdir(sqlDirectory))
+    .filter((file) => file.endsWith('.sql'))
+    .sort();
 
   const client = await pool.connect();
 
   try {
-    await client.query('BEGIN');
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         id BIGSERIAL PRIMARY KEY,
@@ -33,40 +29,42 @@ async function migrate() {
       );
     `);
 
-    const existingMigration = await client.query(
-      `
-          SELECT id
-          FROM schema_migrations
-          WHERE name = $1
-        `,
-      [migrationName],
-    );
+    for (const file of files) {
+      await client.query('BEGIN');
 
-    if (existingMigration.rowCount && existingMigration.rowCount > 0) {
-      console.log(`Migração ${migrationName} já foi executada.`);
+      // Evita que duas pessoas apliquem a mesma migration ao mesmo tempo.
+      // A trava é liberada automaticamente no COMMIT/ROLLBACK.
+      await client.query('SELECT pg_advisory_xact_lock($1)', [
+        MIGRATION_LOCK_ID,
+      ]);
 
-      await client.query('ROLLBACK');
+      const existing = await client.query(
+        'SELECT 1 FROM schema_migrations WHERE name = $1',
+        [file],
+      );
 
-      return;
+      if (existing.rowCount && existing.rowCount > 0) {
+        await client.query('ROLLBACK');
+        console.log(`Migração já aplicada: ${file}`);
+        continue;
+      }
+
+      const sql = await readFile(resolve(sqlDirectory, file), 'utf8');
+
+      await client.query(sql);
+
+      await client.query('INSERT INTO schema_migrations (name) VALUES ($1)', [
+        file,
+      ]);
+
+      await client.query('COMMIT');
+
+      console.log(`Migração aplicada: ${file}`);
     }
-
-    await client.query(sql);
-
-    await client.query(
-      `
-        INSERT INTO schema_migrations (name)
-        VALUES ($1)
-      `,
-      [migrationName],
-    );
-
-    await client.query('COMMIT');
-
-    console.log(`Migração ${migrationName} executada com sucesso.`);
   } catch (error) {
     await client.query('ROLLBACK');
 
-    console.error('Erro ao executar migração:', error);
+    console.error('Erro ao executar migrations:', error);
 
     process.exitCode = 1;
   } finally {

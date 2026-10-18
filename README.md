@@ -133,3 +133,35 @@ Build:
 ```bash
 npm run build
 ```
+
+## Gamificação
+
+Pontos, níveis e conquistas ficam no PostgreSQL do Supabase.
+Módulos futuros devem conceder pontos **somente** pelo serviço do backend:
+
+```ts
+import { awardPoints } from './services/gamification.js';
+
+await awardPoints({
+  userId,
+  points: 20,
+  eventType: 'task_completed',
+  description: 'Tarefa concluída.',
+  referenceType: 'task',
+  referenceId: String(taskId),
+});
+```
+
+Usar `referenceType` + `referenceId` evita pontuar duas vezes o mesmo fato.
+
+Aplicar migrations (compartilhadas por toda a equipe, pois o banco é um só):
+
+```bash
+npm run db:migrate --workspace backend
+```
+
+Pontos de teste (apenas desenvolvimento):
+
+```bash
+npm run gamification:demo --workspace backend -- --email=usuario@email.com
+```
