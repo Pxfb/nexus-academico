@@ -19,6 +19,7 @@ import ProtectedRoute from '../auth/ProtectedRoute';
 import AppShell from '../components/layout/AppShell';
 
 import DashboardPage from '../pages/DashboardPage';
+import PointHistoryPage from '../pages/PointHistoryPage';
 import LoginPage from '../pages/LoginPage';
 import PlaceholderPage from '../pages/PlaceholderPage';
 import RegisterPage from '../pages/RegisterPage';
@@ -136,6 +137,8 @@ export function AppRouter() {
             />
 
             <Route path="conquistas" element={<AchievementsPage />} />
+
+            <Route path="historico-pontos" element={<PointHistoryPage />} />
 
             <Route
               path="notificacoes"

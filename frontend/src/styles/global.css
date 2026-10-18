@@ -1171,3 +1171,381 @@ input:focus-visible {
     gap: 6px;
   }
 }
+
+/* =========================
+   T04 — HISTÓRICO DE PONTOS
+========================= */
+
+.history-section {
+  margin-top: 36px;
+}
+
+.history-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.history-view-all {
+  flex: 0 0 auto;
+  color: var(--color-primary-600);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.history-view-all:hover {
+  text-decoration: underline;
+}
+
+.history-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.history-filters label {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.history-filters select {
+  min-width: 180px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.history-item-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+}
+
+.history-item-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 6px;
+}
+
+.history-item-content > strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.history-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.history-item-points {
+  flex: 0 0 auto;
+  color: var(--color-primary-600);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.history-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  padding: 28px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.history-empty {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-empty strong {
+  color: var(--color-text);
+}
+
+.history-empty p,
+.history-error p {
+  margin: 0;
+}
+
+.history-error {
+  gap: 14px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.history-error strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text);
+}
+
+.history-error .button {
+  margin-top: 12px;
+}
+
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.history-pagination > span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.history-pagination .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Skeleton de carregamento */
+
+.history-skeleton-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-skeleton-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 74px;
+  padding: 16px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  animation: history-pulse 1.4s ease-in-out infinite;
+}
+
+.history-skeleton-icon,
+.history-skeleton-content,
+.history-skeleton-points {
+  display: block;
+  border-radius: 8px;
+  background: var(--color-border);
+}
+
+.history-skeleton-icon {
+  width: 42px;
+  height: 42px;
+}
+
+.history-skeleton-content {
+  width: 55%;
+  height: 16px;
+}
+
+.history-skeleton-points {
+  width: 60px;
+  height: 16px;
+  margin-left: auto;
+}
+
+@keyframes history-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-skeleton-item {
+    animation: none;
+  }
+}
+
+/* =========================
+   T04 — CONQUISTAS RECENTES
+========================= */
+
+.recent-achievements-section {
+  margin-bottom: 36px;
+}
+
+.recent-achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.recent-achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.recent-achievement-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+}
+
+.recent-achievement-card strong,
+.recent-achievement-card span,
+.recent-achievement-card small {
+  display: block;
+}
+
+.recent-achievement-card strong {
+  margin-bottom: 4px;
+}
+
+.recent-achievement-card span {
+  color: var(--color-primary-600);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.recent-achievement-card small {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+/* =========================
+   T04 — DASHBOARD
+========================= */
+
+.dashboard-note {
+  margin-top: 12px;
+}
+
+.dashboard-mini-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 20px;
+  list-style: none;
+}
+
+.dashboard-mini-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-mini-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.dashboard-mini-item span {
+  overflow: hidden;
+  color: var(--color-text-soft);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-mini-item strong {
+  flex: 0 0 auto;
+  color: var(--color-primary-600);
+  font-size: 13px;
+}
+
+/* =========================
+   T04 — RESPONSIVIDADE
+========================= */
+
+@media (max-width: 900px) {
+  .recent-achievements-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .history-heading {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-item {
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .history-item-points {
+    font-size: 13px;
+  }
+
+  .history-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .history-filters select {
+    width: 100%;
+  }
+
+  .history-pagination {
+    flex-wrap: wrap;
+  }
+
+  .history-pagination > span {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+}
