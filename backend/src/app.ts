@@ -7,11 +7,13 @@ import helmet from 'helmet';
 import { pool } from './db.js';
 import { sessionMiddleware } from './session.js';
 import authRouter from './routes/auth.js';
+import gamificationRouter from './routes/gamification.js';
 
 const app: Express = express();
 
-const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
-
+const frontendUrl = (
+  process.env.FRONTEND_URL || 'http://localhost:5173'
+).replace(/\/+$/, '');
 const isProduction = process.env.NODE_ENV === 'production';
 
 app.disable('x-powered-by');
@@ -59,5 +61,6 @@ app.get('/api/health', async (_request, response) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/gamification', gamificationRouter);
 
 export { app };

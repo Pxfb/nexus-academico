@@ -1,4 +1,3 @@
-
 import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { Router } from 'express';
@@ -32,12 +31,9 @@ const passwordSchema = z
   .string()
   .min(8)
   .max(72)
-  .refine(
-    (value) => Buffer.byteLength(value, 'utf8') <= 72,
-    {
-      error: 'A senha deve ter no máximo 72 bytes.',
-    },
-  );
+  .refine((value) => Buffer.byteLength(value, 'utf8') <= 72, {
+    error: 'A senha deve ter no máximo 72 bytes.',
+  });
 
 const registerSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -95,10 +91,7 @@ function createCsrfToken(request: Request) {
   return token;
 }
 
-async function createAuthenticatedSession(
-  request: Request,
-  userId: number,
-) {
+async function createAuthenticatedSession(request: Request, userId: number) {
   await regenerateSession(request);
 
   request.session.userId = userId;
@@ -137,8 +130,7 @@ function validationError(
 
 router.get('/csrf', async (request, response) => {
   try {
-    const token =
-      request.session.csrfToken ?? createCsrfToken(request);
+    const token = request.session.csrfToken ?? createCsrfToken(request);
 
     await saveSession(request);
 
@@ -238,23 +230,19 @@ router.post(
 |--------------------------------------------------------------------------
 */
 
-router.post(
-  '/login',
-  authLimiter,
-  requireCsrf,
-  async (request, response) => {
-    const result = loginSchema.safeParse(request.body);
+router.post('/login', authLimiter, requireCsrf, async (request, response) => {
+  const result = loginSchema.safeParse(request.body);
 
-    if (!result.success) {
-      validationError(response, result);
-      return;
-    }
+  if (!result.success) {
+    validationError(response, result);
+    return;
+  }
 
-    const { email, password } = result.data;
+  const { email, password } = result.data;
 
-    try {
-      const userResult = await pool.query(
-        `
+  try {
+    const userResult = await pool.query(
+      `
           SELECT
             id,
             full_name AS "fullName",
@@ -264,55 +252,51 @@ router.post(
           FROM users
           WHERE email = $1
         `,
-        [email],
-      );
+      [email],
+    );
 
-      if (!userResult.rowCount) {
-        response.status(401).json({
-          message: 'E-mail ou senha inválidos.',
-        });
-
-        return;
-      }
-
-      const user = userResult.rows[0];
-
-      const passwordMatches = await bcrypt.compare(
-        password,
-        user.password_hash,
-      );
-
-      if (!passwordMatches) {
-        response.status(401).json({
-          message: 'E-mail ou senha inválidos.',
-        });
-
-        return;
-      }
-
-      const csrfToken = await createAuthenticatedSession(
-        request,
-        Number(user.id),
-      );
-
-      response.json({
-        user: {
-          id: Number(user.id),
-          fullName: user.fullName,
-          email: user.email,
-          role: user.role,
-        },
-        csrfToken,
+    if (!userResult.rowCount) {
+      response.status(401).json({
+        message: 'E-mail ou senha inválidos.',
       });
-    } catch (error) {
-      console.error('Erro no login:', error);
 
-      response.status(500).json({
-        message: 'Não foi possível realizar o login.',
-      });
+      return;
     }
-  },
-);
+
+    const user = userResult.rows[0];
+
+    const passwordMatches = await bcrypt.compare(password, user.password_hash);
+
+    if (!passwordMatches) {
+      response.status(401).json({
+        message: 'E-mail ou senha inválidos.',
+      });
+
+      return;
+    }
+
+    const csrfToken = await createAuthenticatedSession(
+      request,
+      Number(user.id),
+    );
+
+    response.json({
+      user: {
+        id: Number(user.id),
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+      csrfToken,
+    });
+  } catch (error) {
+    console.error('Erro no login:', error);
+
+    response.status(500).json({
+      message: 'Não foi possível realizar o login.',
+    });
+  }
+});
 
 /*
 |--------------------------------------------------------------------------

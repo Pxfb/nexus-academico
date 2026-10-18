@@ -158,3 +158,28 @@ export async function getApiHealth(): Promise<ApiHealth> {
 
   return response.json();
 }
+export type Achievement = {
+  id: number;
+  code: string;
+  title: string;
+  description: string;
+  icon: string;
+  points: number;
+  requirementType: string;
+  requirementValue: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+};
+
+export type GamificationSummary = {
+  totalPoints: number;
+  level: number;
+  pointsPerLevel: number;
+  pointsInCurrentLevel: number;
+  pointsToNextLevel: number;
+  achievements: Achievement[];
+};
+
+export async function getGamification(): Promise<GamificationSummary> {
+  return apiRequest<GamificationSummary>('/api/gamification/me');
+}
