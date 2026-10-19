@@ -174,12 +174,49 @@ export type Achievement = {
 export type GamificationSummary = {
   totalPoints: number;
   level: number;
-  pointsPerLevel: number;
   pointsInCurrentLevel: number;
   pointsToNextLevel: number;
+  totalPointEvents: number;
   achievements: Achievement[];
 };
 
 export async function getGamification(): Promise<GamificationSummary> {
   return apiRequest<GamificationSummary>('/api/gamification/me');
+}
+
+export type PointEvent = {
+  id: number;
+  points: number;
+  eventType: string;
+  description: string;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+};
+
+export type PointEventPage = {
+  items: PointEvent[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export async function getPointEventHistory(
+  page = 1,
+  pageSize = 10,
+  eventType?: string,
+): Promise<PointEventPage> {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+
+  if (eventType) {
+    params.set('eventType', eventType);
+  }
+
+  return apiRequest<PointEventPage>(
+    `/api/gamification/me/history?${params.toString()}`,
+  );
 }

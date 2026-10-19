@@ -1,29 +1,57 @@
 import 'dotenv/config';
-
 import { pool } from '../db.js';
 import { awardPoints } from '../services/gamification.js';
 
-async function main() {
-  if (process.env.NODE_ENV === 'production') {
-    console.error('Este script não pode ser executado em produção.');
-    process.exitCode = 1;
-    return;
-  }
+const emailArgument = process.argv.find((argument) =>
+  argument.startsWith('--email='),
+);
 
-  const emailArgument = process.argv.find((argument) =>
-    argument.startsWith('--email='),
+const typeArgument = process.argv.find((argument) =>
+  argument.startsWith('--type='),
+);
+
+const email = emailArgument?.split('=')[1]?.trim().toLowerCase();
+
+const type = typeArgument?.split('=')[1]?.trim() ?? 'demo';
+
+if (!email) {
+  console.error(
+    'Uso: npm run gamification:demo --workspace backend -- --email=usuario@email.com --type=demo',
   );
 
-  const email = emailArgument?.split('=')[1]?.trim().toLowerCase();
+  process.exit(1);
+}
 
-  if (!email) {
-    console.error(
-      'Uso: npm run gamification:demo --workspace backend -- --email=usuario@email.com',
-    );
-    process.exitCode = 1;
-    return;
-  }
+const demoEvents: Record<string, { points: number; description: string }> = {
+  demo: {
+    points: 25,
+    description: 'Atividade de demonstração do Tutorial 04.',
+  },
+  task_completed: {
+    points: 20,
+    description: 'Tarefa concluída — evento de demonstração.',
+  },
+  meeting_attended: {
+    points: 30,
+    description: 'Participação em reunião — evento de demonstração.',
+  },
+  scrum_completed: {
+    points: 15,
+    description: 'Daily Scrum realizado — evento de demonstração.',
+  },
+};
 
+const event = demoEvents[type];
+
+if (!event) {
+  console.error(`Tipo de demonstração inválido: ${type}`);
+
+  console.error(`Tipos disponíveis: ${Object.keys(demoEvents).join(', ')}`);
+
+  process.exit(1);
+}
+
+try {
   const userResult = await pool.query(
     `
       SELECT id, full_name AS "fullName"
@@ -36,30 +64,31 @@ async function main() {
 
   if (!userResult.rows[0]) {
     console.error(`Usuário não encontrado: ${email}`);
-    process.exitCode = 1;
-    return;
+
+    process.exit(1);
   }
 
-  const result = await awardPoints({
-    userId: Number(userResult.rows[0].id),
-    points: 100,
-    eventType: 'demo',
-    description: 'Pontuação de demonstração do Tutorial 03.',
+  const userId = Number(userResult.rows[0].id);
+
+  const summary = await awardPoints({
+    userId,
+    points: event.points,
+    eventType: type,
+    description: event.description,
     referenceType: 'tutorial',
-    // referência única: cada execução é um fato novo
-    referenceId: `T03-${Date.now()}`,
+    referenceId: 'T04',
   });
 
-  console.log(`Pontos adicionados para ${userResult.rows[0].fullName}.`);
-  console.log(`Total: ${result.summary.totalPoints}`);
-  console.log(`Nível: ${result.summary.level}`);
+  console.log(
+    `Evento '${type}' registrado para ${userResult.rows[0].fullName}.`,
+  );
+  console.log(`Pontos adicionados: ${event.points}`);
+  console.log(`Total atual: ${summary.totalPoints}`);
+  console.log(`Nível atual: ${summary.level}`);
+} catch (error) {
+  console.error('Erro ao adicionar evento de demonstração:', error);
+
+  process.exitCode = 1;
+} finally {
+  await pool.end();
 }
-
-main()
-  .catch((error) => {
-    console.error('Erro ao adicionar pontos de demonstração:', error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await pool.end();
-  });

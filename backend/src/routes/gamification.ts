@@ -1,31 +1,76 @@
 import { Router } from 'express';
-
 import { requireAuth } from '../middleware/auth.js';
-import { getGamificationSummary } from '../services/gamification.js';
+import {
+  getGamificationSummary,
+  getPointEvents,
+} from '../services/gamification.js';
 
 const router = Router();
 
-router.get('/me', requireAuth, async (request, response) => {
-  const userId = request.session.userId;
+const EVENT_TYPE_PATTERN = /^[a-z0-9_]{1,60}$/;
 
-  if (!userId) {
-    response.status(401).json({
-      message: 'Usuário não autenticado.',
-    });
-
-    return;
+function parsePositiveInteger(value: unknown, fallback: number): number {
+  if (typeof value !== 'string') {
+    return fallback;
   }
 
-  try {
-    const summary = await getGamificationSummary(userId);
+  const parsed = Number(value);
 
-    response.set('Cache-Control', 'no-store');
-    response.json(summary);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const summary = await getGamificationSummary(req.session.userId!);
+
+    res.json(summary);
   } catch (error) {
     console.error('Erro ao carregar gamificação:', error);
 
-    response.status(500).json({
+    res.status(500).json({
       message: 'Não foi possível carregar a gamificação.',
+    });
+  }
+});
+
+router.get('/me/history', requireAuth, async (req, res) => {
+  try {
+    const page = parsePositiveInteger(req.query.page, 1);
+
+    const pageSize = parsePositiveInteger(req.query.pageSize, 10);
+
+    const rawEventType = req.query.eventType;
+
+    let eventType: string | undefined;
+
+    if (rawEventType !== undefined) {
+      if (
+        typeof rawEventType !== 'string' ||
+        !EVENT_TYPE_PATTERN.test(rawEventType)
+      ) {
+        res.status(400).json({
+          message: 'Tipo de evento inválido.',
+        });
+
+        return;
+      }
+
+      eventType = rawEventType;
+    }
+
+    const history = await getPointEvents(
+      req.session.userId!,
+      page,
+      pageSize,
+      eventType,
+    );
+
+    res.json(history);
+  } catch (error) {
+    console.error('Erro ao carregar histórico de pontos:', error);
+
+    res.status(500).json({
+      message: 'Não foi possível carregar o histórico de pontos.',
     });
   }
 });

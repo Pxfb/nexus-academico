@@ -1,13 +1,18 @@
 import { CalendarDays, CheckCircle2, Clock3, Trophy } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
+import { useAuth } from '../auth/AuthContext';
 import { ApiStatus } from '../components/ui/ApiStatus';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { StatCard } from '../components/ui/StatCard';
-import { useEffect, useState } from 'react';
-import { getGamification, type GamificationSummary } from '../lib/api';
+import {
+  getGamification,
+  getPointEventHistory,
+  type GamificationSummary,
+  type PointEventPage,
+} from '../lib/api';
 
 const tasks = [
   {
@@ -29,9 +34,12 @@ const tasks = [
 
 export default function DashboardPage() {
   const { user } = useAuth();
+
   const [gamification, setGamification] = useState<GamificationSummary | null>(
     null,
   );
+
+  const [recentPoints, setRecentPoints] = useState<PointEventPage | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -43,14 +51,24 @@ export default function DashboardPage() {
         }
       })
       .catch((error) => {
-        // O Dashboard continua funcionando mesmo sem a gamificação.
         console.error('Não foi possível carregar a gamificação:', error);
+      });
+
+    getPointEventHistory(1, 3)
+      .then((result) => {
+        if (active) {
+          setRecentPoints(result);
+        }
+      })
+      .catch((error) => {
+        console.error('Não foi possível carregar os pontos recentes:', error);
       });
 
     return () => {
       active = false;
     };
   }, []);
+
   return (
     <div className="page">
       <header className="page-header">
@@ -154,18 +172,90 @@ export default function DashboardPage() {
                 className="progress"
                 aria-label="78% das atividades concluídas"
               >
-                <div
-                  className="progress-value"
-                  style={{
-                    width: '78%',
-                  }}
-                />
+                <div className="progress-value" style={{ width: '78%' }} />
               </div>
             </div>
           </Card>
         </div>
 
         <div className="dashboard-column">
+          {gamification && (
+            <Card>
+              <div className="card-header">
+                <div>
+                  <h2 className="card-title">Nível {gamification.level}</h2>
+
+                  <p className="card-subtitle">
+                    {gamification.totalPoints} pontos acumulados
+                  </p>
+                </div>
+
+                <Link to="/conquistas" className="text-link">
+                  Ver conquistas
+                </Link>
+              </div>
+
+              <div className="card-body">
+                <div className="progress-info">
+                  <span className="progress-label">Progresso do nível</span>
+
+                  <span className="progress-number">
+                    {gamification.pointsInCurrentLevel} / 100
+                  </span>
+                </div>
+
+                <div
+                  className="progress"
+                  role="progressbar"
+                  aria-label="Progresso para o próximo nível"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={gamification.pointsInCurrentLevel}
+                >
+                  <div
+                    className="progress-value"
+                    style={{
+                      width: `${gamification.pointsInCurrentLevel}%`,
+                    }}
+                  />
+                </div>
+
+                <p className="card-subtitle dashboard-note">
+                  Faltam {gamification.pointsToNextLevel} pontos para o próximo
+                  nível.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {recentPoints && recentPoints.items.length > 0 && (
+            <Card>
+              <div className="card-header">
+                <div>
+                  <h2 className="card-title">Pontos recentes</h2>
+
+                  <p className="card-subtitle">
+                    Últimas atividades que geraram pontos
+                  </p>
+                </div>
+
+                <Link to="/historico-pontos" className="text-link">
+                  Ver histórico
+                </Link>
+              </div>
+
+              <ul className="dashboard-mini-list">
+                {recentPoints.items.map((event) => (
+                  <li className="dashboard-mini-item" key={event.id}>
+                    <span>{event.description}</span>
+
+                    <strong>+{event.points}</strong>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
           <Card>
             <div className="card-header">
               <div>
@@ -199,63 +289,6 @@ export default function DashboardPage() {
 
             <div className="card-body">
               <ApiStatus />
-            </div>
-          </Card>
-          <Card>
-            <div className="card-header">
-              <div>
-                <h2 className="card-title">Seu nível</h2>
-
-                <p className="card-subtitle">Evolução na gamificação</p>
-              </div>
-
-              <Link to="/conquistas" className="text-link">
-                Ver conquistas
-              </Link>
-            </div>
-
-            <div className="card-body">
-              {gamification ? (
-                <>
-                  <div className="progress-info">
-                    <span className="progress-label">
-                      Nível {gamification.level}
-                    </span>
-
-                    <span className="progress-number">
-                      {gamification.pointsInCurrentLevel} /{' '}
-                      {gamification.pointsPerLevel}
-                    </span>
-                  </div>
-
-                  <div
-                    className="progress"
-                    role="progressbar"
-                    aria-label="Progresso para o próximo nível"
-                    aria-valuemin={0}
-                    aria-valuemax={gamification.pointsPerLevel}
-                    aria-valuenow={gamification.pointsInCurrentLevel}
-                  >
-                    <div
-                      className="progress-value"
-                      style={{
-                        width: `${Math.round(
-                          (gamification.pointsInCurrentLevel /
-                            gamification.pointsPerLevel) *
-                            100,
-                        )}%`,
-                      }}
-                    />
-                  </div>
-
-                  <p className="card-subtitle">
-                    Faltam {gamification.pointsToNextLevel} pontos para o
-                    próximo nível.
-                  </p>
-                </>
-              ) : (
-                <p className="card-subtitle">Carregando...</p>
-              )}
             </div>
           </Card>
         </div>
