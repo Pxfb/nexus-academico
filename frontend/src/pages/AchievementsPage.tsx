@@ -1,95 +1,22 @@
-import {
-  Award,
-  Check,
-  CircleHelp,
-  Footprints,
-  GraduationCap,
-  Lock,
-  Sparkles,
-  Trophy,
-} from 'lucide-react';
+import { Award, CircleHelp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import AchievementGrid from '../components/gamification/AchievementGrid';
+import {
+  formatDate,
+  getAchievementIcon,
+} from '../components/gamification/achievementUtils';
+import LevelProgressCard from '../components/gamification/LevelProgressCard';
+import NextAchievementCard from '../components/gamification/NextAchievementCard';
 import PointHistory from '../components/gamification/PointHistory';
 import {
   ApiError,
   getGamification,
-  type Achievement,
   type GamificationSummary,
 } from '../lib/api';
 
-function getAchievementIcon(icon: string) {
-  switch (icon) {
-    case 'footprints':
-      return Footprints;
-
-    case 'sparkles':
-      return Sparkles;
-
-    case 'graduation-cap':
-      return GraduationCap;
-
-    case 'trophy':
-      return Trophy;
-
-    default:
-      return Award;
-  }
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(value));
-}
-
 function toTime(value: string | null): number {
   return value ? new Date(value).getTime() : 0;
-}
-
-function AchievementCard({ achievement }: { achievement: Achievement }) {
-  const Icon = getAchievementIcon(achievement.icon);
-
-  return (
-    <article
-      className={`achievement-card ${
-        achievement.unlocked
-          ? 'achievement-card-unlocked'
-          : 'achievement-card-locked'
-      }`}
-    >
-      <div className="achievement-icon">
-        {achievement.unlocked ? <Icon size={26} /> : <Lock size={22} />}
-      </div>
-
-      <div className="achievement-content">
-        <div className="achievement-heading">
-          <h3>{achievement.title}</h3>
-
-          {achievement.unlocked && (
-            <span className="achievement-status">
-              <Check size={14} />
-              Desbloqueada
-            </span>
-          )}
-        </div>
-
-        <p>{achievement.description}</p>
-
-        <div className="achievement-footer">
-          <span className="achievement-points">+{achievement.points} pts</span>
-
-          {achievement.unlocked && achievement.unlockedAt ? (
-            <span>Desbloqueada em {formatDate(achievement.unlockedAt)}</span>
-          ) : (
-            <span>Requer {achievement.requirementValue} pts</span>
-          )}
-        </div>
-      </div>
-    </article>
-  );
 }
 
 export default function AchievementsPage() {
@@ -98,6 +25,8 @@ export default function AchievementsPage() {
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState<string | null>(null);
+
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -134,13 +63,13 @@ export default function AchievementsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [attempt]);
 
   if (loading) {
     return (
       <div className="page">
-        <div className="page-loading">
-          <Award size={24} />
+        <div className="page-loading" aria-busy="true">
+          <Award size={24} aria-hidden="true" />
           <span>Carregando suas conquistas...</span>
         </div>
       </div>
@@ -150,13 +79,21 @@ export default function AchievementsPage() {
   if (error) {
     return (
       <div className="page">
-        <div className="page-error">
-          <CircleHelp size={24} />
+        <div className="page-error" role="alert">
+          <CircleHelp size={24} aria-hidden="true" />
 
           <div>
             <h2>Não foi possível carregar a gamificação</h2>
             <p>{error}</p>
           </div>
+
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => setAttempt((current) => current + 1)}
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
@@ -166,15 +103,13 @@ export default function AchievementsPage() {
     return (
       <div className="page">
         <div className="page-empty">
-          <Award size={28} />
+          <Award size={28} aria-hidden="true" />
           <h2>Nenhum dado de gamificação</h2>
           <p>Ainda não existem informações de gamificação para este usuário.</p>
         </div>
       </div>
     );
   }
-
-  const progressPercentage = data.pointsInCurrentLevel;
 
   const unlockedCount = data.achievements.filter(
     (achievement) => achievement.unlocked,
@@ -198,49 +133,23 @@ export default function AchievementsPage() {
           <h1 className="page-title">Conquistas</h1>
 
           <p className="page-description">
-            Acompanhe sua evolução acadêmica e suas conquistas.
+            Acompanhe sua evolução acadêmica, seu progresso em cada conquista e
+            a próxima meta a alcançar.
           </p>
         </div>
       </header>
 
       <div className="gamification-overview">
-        <div className="level-card">
-          <div className="level-card-top">
-            <div className="level-icon">
-              <Trophy size={28} />
-            </div>
-
-            <div>
-              <span className="level-label">Nível atual</span>
-
-              <strong>Nível {data.level}</strong>
-            </div>
-          </div>
-
-          <div className="level-points">
-            <span>{data.totalPoints}</span>
-            <small>pontos</small>
-          </div>
-
-          <div className="level-progress">
-            <div className="level-progress-track">
-              <div
-                className="level-progress-value"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-
-            <div className="level-progress-labels">
-              <span>{data.pointsInCurrentLevel} / 100</span>
-
-              <span>{data.pointsToNextLevel} pts para o próximo nível</span>
-            </div>
-          </div>
-        </div>
+        <LevelProgressCard
+          level={data.level}
+          totalPoints={data.totalPoints}
+          pointsInCurrentLevel={data.pointsInCurrentLevel}
+          pointsToNextLevel={data.pointsToNextLevel}
+        />
 
         <div className="gamification-stat-card">
           <div className="stat-icon">
-            <Award size={24} />
+            <Award size={24} aria-hidden="true" />
           </div>
 
           <span>Conquistas</span>
@@ -254,6 +163,12 @@ export default function AchievementsPage() {
           <small>{data.totalPointEvents} atividades registradas</small>
         </div>
       </div>
+
+      {data.nextAchievement && (
+        <section className="next-achievement-section">
+          <NextAchievementCard achievement={data.nextAchievement} />
+        </section>
+      )}
 
       {recentAchievements.length > 0 && (
         <section className="recent-achievements-section">
@@ -275,7 +190,7 @@ export default function AchievementsPage() {
                   key={achievement.id}
                 >
                   <div className="recent-achievement-icon">
-                    <Icon size={24} />
+                    <Icon size={24} aria-hidden="true" />
                   </div>
 
                   <div>
@@ -306,21 +221,7 @@ export default function AchievementsPage() {
           </div>
         </div>
 
-        {data.achievements.length === 0 ? (
-          <div className="page-empty">
-            <Award size={28} />
-
-            <h2>Nenhuma conquista cadastrada</h2>
-
-            <p>O catálogo de conquistas ainda está vazio.</p>
-          </div>
-        ) : (
-          <div className="achievements-grid">
-            {data.achievements.map((achievement) => (
-              <AchievementCard key={achievement.id} achievement={achievement} />
-            ))}
-          </div>
-        )}
+        <AchievementGrid achievements={data.achievements} />
       </section>
 
       <PointHistory />

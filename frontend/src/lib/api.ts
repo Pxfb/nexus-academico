@@ -167,6 +167,9 @@ export type Achievement = {
   points: number;
   requirementType: string;
   requirementValue: number;
+  requirementEventType: string | null;
+  currentValue: number;
+  progressPercent: number;
   unlocked: boolean;
   unlockedAt: string | null;
 };
@@ -178,6 +181,7 @@ export type GamificationSummary = {
   pointsToNextLevel: number;
   totalPointEvents: number;
   achievements: Achievement[];
+  nextAchievement: Achievement | null;
 };
 
 export async function getGamification(): Promise<GamificationSummary> {

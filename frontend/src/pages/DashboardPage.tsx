@@ -224,6 +224,13 @@ export default function DashboardPage() {
                   Faltam {gamification.pointsToNextLevel} pontos para o próximo
                   nível.
                 </p>
+                {gamification.nextAchievement && (
+                  <p className="card-subtitle dashboard-note">
+                    Próxima conquista:{' '}
+                    <strong>{gamification.nextAchievement.title}</strong> (
+                    {gamification.nextAchievement.progressPercent}%)
+                  </p>
+                )}
               </div>
             </Card>
           )}

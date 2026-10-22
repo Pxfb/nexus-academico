@@ -10,6 +10,9 @@ export type AchievementSummary = {
   points: number;
   requirementType: string;
   requirementValue: number;
+  requirementEventType: string | null;
+  currentValue: number;
+  progressPercent: number;
   unlocked: boolean;
   unlockedAt: string | null;
 };
@@ -21,6 +24,7 @@ export type GamificationSummary = {
   pointsToNextLevel: number;
   totalPointEvents: number;
   achievements: AchievementSummary[];
+  nextAchievement: AchievementSummary | null;
 };
 
 export type PointEvent = {
@@ -46,6 +50,23 @@ const MAX_PAGE = 100000;
 
 function calculateLevel(totalPoints: number): number {
   return Math.floor(totalPoints / 100) + 1;
+}
+
+function getCurrentValue(
+  requirementType: string,
+  requirementEventType: string | null,
+  totalPoints: number,
+  eventCounts: Map<string, number>,
+): number {
+  if (requirementType === 'points') {
+    return totalPoints;
+  }
+
+  if (requirementType === 'events' && requirementEventType) {
+    return eventCounts.get(requirementEventType) ?? 0;
+  }
+
+  return 0;
 }
 
 export async function ensureGamificationProfile(userId: number): Promise<void> {
@@ -85,16 +106,33 @@ export async function getGamificationSummary(
     level: number;
   };
 
-  const pointEventsCountResult = await pool.query(
+  const totalPoints = Number(profile.totalPoints);
+  const level = calculateLevel(totalPoints);
+  const pointsInCurrentLevel = totalPoints % 100;
+  const pointsToNextLevel = 100 - pointsInCurrentLevel;
+
+  const eventCountsResult = await pool.query(
     `
-      SELECT COUNT(*)::int AS total
+      SELECT
+        event_type AS "eventType",
+        COUNT(*)::int AS total
       FROM point_events
       WHERE user_id = $1
+      GROUP BY event_type
     `,
     [userId],
   );
 
-  const totalPointEvents = Number(pointEventsCountResult.rows[0].total);
+  const eventCounts = new Map<string, number>(
+    eventCountsResult.rows.map(
+      (row) => [row.eventType, Number(row.total)] as [string, number],
+    ),
+  );
+
+  const totalPointEvents = Array.from(eventCounts.values()).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
 
   const achievementsResult = await pool.query(
     `
@@ -107,6 +145,7 @@ export async function getGamificationSummary(
         a.points,
         a.requirement_type AS "requirementType",
         a.requirement_value AS "requirementValue",
+        a.requirement_event_type AS "requirementEventType",
         ua.unlocked_at AS "unlockedAt"
       FROM achievements a
       LEFT JOIN user_achievements ua
@@ -124,26 +163,51 @@ export async function getGamificationSummary(
   );
 
   const achievements: AchievementSummary[] = achievementsResult.rows.map(
-    (row) => ({
-      id: Number(row.id),
-      code: row.code,
-      title: row.title,
-      description: row.description,
-      icon: row.icon,
-      points: Number(row.points),
-      requirementType: row.requirementType,
-      requirementValue: Number(row.requirementValue),
-      unlocked: row.unlockedAt !== null,
-      unlockedAt: row.unlockedAt
-        ? new Date(row.unlockedAt).toISOString()
-        : null,
-    }),
+    (row) => {
+      const requirementValue = Number(row.requirementValue);
+      const unlocked = row.unlockedAt !== null;
+
+      const currentValue = getCurrentValue(
+        row.requirementType,
+        row.requirementEventType,
+        totalPoints,
+        eventCounts,
+      );
+
+      const progressPercent =
+        unlocked || requirementValue <= 0
+          ? 100
+          : Math.min(100, Math.floor((currentValue / requirementValue) * 100));
+
+      return {
+        id: Number(row.id),
+        code: row.code,
+        title: row.title,
+        description: row.description,
+        icon: row.icon,
+        points: Number(row.points),
+        requirementType: row.requirementType,
+        requirementValue,
+        requirementEventType: row.requirementEventType,
+        currentValue,
+        progressPercent,
+        unlocked,
+        unlockedAt: row.unlockedAt
+          ? new Date(row.unlockedAt).toISOString()
+          : null,
+      };
+    },
   );
 
-  const totalPoints = Number(profile.totalPoints);
-  const level = calculateLevel(totalPoints);
-  const pointsInCurrentLevel = totalPoints % 100;
-  const pointsToNextLevel = 100 - pointsInCurrentLevel;
+  const nextAchievement =
+    achievements
+      .filter((achievement) => !achievement.unlocked)
+      .sort(
+        (a, b) =>
+          b.progressPercent - a.progressPercent ||
+          a.requirementValue - b.requirementValue ||
+          a.id - b.id,
+      )[0] ?? null;
 
   return {
     totalPoints,
@@ -152,6 +216,7 @@ export async function getGamificationSummary(
     pointsToNextLevel,
     totalPointEvents,
     achievements,
+    nextAchievement,
   };
 }
 
@@ -235,11 +300,25 @@ async function unlockEligibleAchievements(
         achievement_id
       )
       SELECT
-        $1,
+        $1::bigint,
         a.id
       FROM achievements a
-      WHERE a.requirement_type = 'points'
-        AND a.requirement_value <= $2
+      WHERE
+        (
+          a.requirement_type = 'points'
+          AND a.requirement_value <= $2::int
+        )
+        OR
+        (
+          a.requirement_type = 'events'
+          AND a.requirement_event_type IS NOT NULL
+          AND a.requirement_value <= (
+            SELECT COUNT(*)
+            FROM point_events pe
+            WHERE pe.user_id = $1::bigint
+              AND pe.event_type = a.requirement_event_type
+          )
+        )
       ON CONFLICT (user_id, achievement_id) DO NOTHING
     `,
     [userId, totalPoints],

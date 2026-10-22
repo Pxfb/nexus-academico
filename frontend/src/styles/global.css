@@ -1549,3 +1549,136 @@ input:focus-visible {
     text-align: center;
   }
 }
+
+/* =========================
+   T05 — PROGRESSO DE CONQUISTAS
+========================= */
+
+.achievement-progress {
+  margin: -8px 0 14px;
+}
+
+.achievement-progress-track {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-primary-100);
+}
+
+.achievement-progress-value {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary-600);
+  transition: width 300ms ease;
+}
+
+.achievement-progress-label {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* =========================
+   T05 — PRÓXIMA CONQUISTA
+========================= */
+
+.next-achievement-section {
+  margin-bottom: 32px;
+}
+
+.next-achievement {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--color-primary-100);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-50);
+}
+
+.next-achievement-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--color-surface);
+  color: var(--color-primary-600);
+}
+
+.next-achievement-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.next-achievement-label {
+  color: var(--color-primary-700);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.next-achievement-content h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.next-achievement-content p {
+  margin: 6px 0 14px;
+  color: var(--color-text-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.next-achievement .achievement-progress-track {
+  background: var(--color-surface);
+}
+
+/* =========================
+   T05 — FILTRO DE CONQUISTAS
+========================= */
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-chip {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.filter-chip:hover {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+}
+
+.filter-chip.active {
+  border-color: var(--color-primary-600);
+  background: var(--color-primary-600);
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .next-achievement {
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .filter-chip {
+    flex: 1 1 auto;
+  }
+}
