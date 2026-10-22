@@ -9,8 +9,10 @@ import { Card } from '../components/ui/Card';
 import { StatCard } from '../components/ui/StatCard';
 import {
   getGamification,
+  getNextMeeting,
   getPointEventHistory,
   type GamificationSummary,
+  type Meeting,
   type PointEventPage,
 } from '../lib/api';
 
@@ -40,6 +42,7 @@ export default function DashboardPage() {
   );
 
   const [recentPoints, setRecentPoints] = useState<PointEventPage | null>(null);
+  const [nextMeeting, setNextMeeting] = useState<Meeting | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -63,7 +66,15 @@ export default function DashboardPage() {
       .catch((error) => {
         console.error('Não foi possível carregar os pontos recentes:', error);
       });
-
+    getNextMeeting()
+      .then((result) => {
+        if (active) {
+          setNextMeeting(result);
+        }
+      })
+      .catch((error) => {
+        console.error('Não foi possível carregar a próxima reunião:', error);
+      });
     return () => {
       active = false;
     };
@@ -93,7 +104,18 @@ export default function DashboardPage() {
       <div className="stats-grid">
         <StatCard label="Tarefas pendentes" value="6" icon={CheckCircle2} />
 
-        <StatCard label="Próxima reunião" value="14:00" icon={Clock3} />
+        <StatCard
+          label="Próxima reunião"
+          value={
+            nextMeeting
+              ? new Intl.DateTimeFormat('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }).format(new Date(nextMeeting.scheduledAt))
+              : '—'
+          }
+          icon={Clock3}
+        />
 
         <StatCard
           label="Atividades da semana"
@@ -273,15 +295,34 @@ export default function DashboardPage() {
             </div>
 
             <div className="card-body">
-              <div className="task-row">
-                <div className="task-content">
-                  <p className="task-title">Reunião da equipe</p>
+              {nextMeeting ? (
+                <div className="task-row">
+                  <div className="task-content">
+                    <p className="task-title">{nextMeeting.title}</p>
 
-                  <p className="task-meta">14:00 — Sala virtual</p>
+                    <p className="task-meta">
+                      {new Intl.DateTimeFormat('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }).format(new Date(nextMeeting.scheduledAt))}
+                      {nextMeeting.location ? ` — ${nextMeeting.location}` : ''}
+                    </p>
+                  </div>
+
+                  <Link to="/reunioes" className="text-link">
+                    Ver reuniões
+                  </Link>
                 </div>
-
-                <Badge variant="success">Hoje</Badge>
-              </div>
+              ) : (
+                <p className="card-subtitle">
+                  Nenhuma reunião próxima.{' '}
+                  <Link to="/reunioes" className="text-link">
+                    Agendar
+                  </Link>
+                </p>
+              )}
             </div>
           </Card>
 

@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import MeetingsPage from '../pages/MeetingsPage';
 
 import {
   BookOpen,
@@ -10,7 +11,6 @@ import {
   NotebookPen,
   Settings,
   Users,
-  Video,
   Bell,
 } from 'lucide-react';
 
@@ -59,16 +59,7 @@ export function AppRouter() {
               }
             />
 
-            <Route
-              path="reunioes"
-              element={
-                <PlaceholderPage
-                  title="Reuniões"
-                  description="Área preparada para reuniões, encontros e registros."
-                  icon={Video}
-                />
-              }
-            />
+            <Route path="reunioes" element={<MeetingsPage />} />
 
             <Route
               path="materiais"

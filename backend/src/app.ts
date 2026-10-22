@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import meetingsRouter from './routes/meetings.js';
 
 import cors from 'cors';
 import express, { type Express } from 'express';
@@ -62,5 +63,6 @@ app.get('/api/health', async (_request, response) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/gamification', gamificationRouter);
+app.use('/api/meetings', meetingsRouter);
 
 export { app };

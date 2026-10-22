@@ -224,3 +224,88 @@ export async function getPointEventHistory(
     `/api/gamification/me/history?${params.toString()}`,
   );
 }
+
+export type Meeting = {
+  id: number;
+  title: string;
+  description: string | null;
+  scheduledAt: string;
+  durationMinutes: number;
+  location: string | null;
+  meetingUrl: string | null;
+  status: 'scheduled' | 'cancelled';
+  attendedAt: string | null;
+  createdAt: string;
+};
+
+export type MeetingInput = {
+  title: string;
+  description: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  location: string;
+  meetingUrl: string;
+};
+
+export type MeetingFilter = 'upcoming' | 'past' | 'all';
+
+export async function listMeetings(
+  filter: MeetingFilter = 'upcoming',
+): Promise<Meeting[]> {
+  const response = await apiRequest<{ items: Meeting[] }>(
+    `/api/meetings?filter=${filter}`,
+  );
+
+  return response.items;
+}
+
+export async function getNextMeeting(): Promise<Meeting | null> {
+  const response = await apiRequest<{ meeting: Meeting | null }>(
+    '/api/meetings/next',
+  );
+
+  return response.meeting;
+}
+
+export async function createMeeting(input: MeetingInput): Promise<Meeting> {
+  const response = await apiRequest<{ meeting: Meeting }>('/api/meetings', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+
+  return response.meeting;
+}
+
+export async function updateMeeting(
+  id: number,
+  input: MeetingInput,
+): Promise<Meeting> {
+  const response = await apiRequest<{ meeting: Meeting }>(
+    `/api/meetings/${id}`,
+    { method: 'PUT', body: JSON.stringify(input) },
+  );
+
+  return response.meeting;
+}
+
+export async function cancelMeeting(id: number): Promise<Meeting> {
+  const response = await apiRequest<{ meeting: Meeting }>(
+    `/api/meetings/${id}/cancel`,
+    { method: 'POST' },
+  );
+
+  return response.meeting;
+}
+
+export async function attendMeeting(
+  id: number,
+): Promise<{ meeting: Meeting; pointsAwarded: number }> {
+  return apiRequest<{ meeting: Meeting; pointsAwarded: number }>(
+    `/api/meetings/${id}/attend`,
+    { method: 'POST' },
+  );
+}
+
+export async function deleteMeeting(id: number): Promise<void> {
+  await apiRequest(`/api/meetings/${id}`, { method: 'DELETE' });
+}
