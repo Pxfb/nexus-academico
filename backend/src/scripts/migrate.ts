@@ -20,6 +20,14 @@ const migrations = [
     name: '003_gamification_history_and_security',
     file: '003_gamification_history_and_security.sql',
   },
+  {
+    name: '004_gamification_achievement_progress',
+    file: '004_gamification_achievement_progress.sql',
+  },
+  {
+    name: '005_create_meetings',
+    file: '005_create_meetings.sql',
+  },
 ];
 
 const client = await pool.connect();
